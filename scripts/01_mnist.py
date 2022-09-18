@@ -1,5 +1,4 @@
 # MNIST手写数字分类
-
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -11,6 +10,7 @@ from torchvision import datasets, transforms
 
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import Callback
+from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 
 import os, gc, time
 import math, random
@@ -21,15 +21,15 @@ import seaborn as sns
 from tqdm import tqdm
 from sklearn.metrics import *
 
+import warnings
+warnings.filterwarnings("ignore")
 
 # - 定义超参数
-
 
 epochs = 10
 batch_size = 128
 
 # - 创建数据集和生成器
-
 
 train_transform = transforms.Compose([
     transforms.ToTensor(),
@@ -47,8 +47,6 @@ val_dataset = datasets.MNIST("data", train=False, transform=val_transform)
 val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
 
 # - 定义损失函数和指标
-
-
 class CrossEntropyLoss(Module): # 和Pytorch官方实现一样
     def __init__(self):
         super().__init__()
@@ -108,8 +106,6 @@ class ClassificationMetric(object): # 记录结果并计算指标
 
 
 # - 定义模型和训练逻辑
-
-
 class CustomModel(pl.LightningModule):
     def __init__(self):
         super().__init__()
@@ -190,8 +186,6 @@ model = CustomModel()
 
 
 # - 定义进度条和学习曲线（我不喜欢官方的进度条，所以自己写了一个）
-
-
 class FlexibleTqdm(Callback):
     def __init__(self, steps, column_width=10):
         super(FlexibleTqdm, self).__init__()
@@ -212,13 +206,14 @@ class FlexibleTqdm(Callback):
         print(self.row)
 
     def on_train_batch_end(self, trainer, module, outputs, batch, batch_idx, dataloader_idx):
-        current_index = int((batch_idx + 1) * 100 / self.steps)
-        tqdm = ["."] * 100
-        for i in range(current_index - 1):
-            tqdm[i] = "="
-        if current_index:
-            tqdm[current_index - 1] = ">"
-        print(self.info % (module.current_epoch, str(current_index).rjust(3), "".join(tqdm)), end="")
+        pass
+        # current_index = int((batch_idx + 1) * 100 / self.steps)
+        # tqdm = ["."] * 100
+        # for i in range(current_index - 1):
+        #     tqdm[i] = "="
+        # if current_index:
+        #     tqdm[current_index - 1] = ">"
+        # print(self.info % (module.current_epoch, str(current_index).rjust(3), "".join(tqdm)), end="")
 
     def on_epoch_start(self, trainer, module):
         print(self.info % (module.current_epoch, "  0", "." * 100), end="")
@@ -235,8 +230,27 @@ class FlexibleTqdm(Callback):
         print("\r" + " " * 120, end="")
         print(detail)
         print(self.row)
-        
-        
+
+import pandas as pd        
+class LogHistory(Callback):
+    def __init__(self, name='LogHistory'):
+        super(LogHistory, self).__init__()
+        self.name = name
+
+    def on_fit_end(self, trainer, module):
+        df =pd.DataFrame.from_dict(model.history)#.reset_index()
+        df.to_csv(self.name+'.csv')
+        # history = module.history
+        # plt.figure(figsize=self.figsize)
+        # for i, j in enumerate(self.names):
+        #     plt.subplot(1, len(self.names), i + 1)
+        #     plt.title(j + "/val_" + j)
+        #     plt.plot(history[j], "--o", color='r', label=j)
+        #     plt.plot(history["val_" + j], "-*", color='g', label="val_" + j)
+        #     plt.legend()
+        # plt.show()
+
+
 class LearningCurve(Callback):
     def __init__(self, figsize=(12, 4), names=("loss", "acc", "f1")):
         super(LearningCurve, self).__init__()
@@ -254,30 +268,24 @@ class LearningCurve(Callback):
             plt.legend()
         plt.show()
 
-
 # - 设置训练参数（我不喜欢用logger，所以全关闭了）
-
-
 trainer_params = {
     "gpus": 1,
     "max_epochs": epochs,  # 1000
     # "checkpoint_callback": False,  # True
+    # "logger": TensorBoardLogger("runs", name='01_mnist', version='k'),  # TensorBoardLogger
     "logger": False,  # TensorBoardLogger
     # "progress_bar_refresh_rate": 0,  # 1
     "num_sanity_val_steps": 0,  # 2
     "callbacks": [
-        FlexibleTqdm(len(train_dataset) // batch_size, column_width=12), # 注意设置progress_bar_refresh_rate=0，取消自带的进度条
-        LearningCurve(figsize=(12, 4), names=("loss", "acc", "f1")),
+        # FlexibleTqdm(len(train_dataset) // batch_size, column_width=12), # 注意设置progress_bar_refresh_rate=0，取消自带的进度条
+        LearningCurve(), LogHistory()
     ],  # None
 }
 trainer = pl.Trainer(**trainer_params)
 
 # - 开启训练
-
-
 trainer.fit(model, train_dataloader, val_dataloader)
-
-
 # 训练结果
 # ![](./images/train_log.png)
 

@@ -12,3 +12,4 @@ shortcuts.sh
 mnist_train/
 runs/
 bank-names.txt
+checkpoints/
