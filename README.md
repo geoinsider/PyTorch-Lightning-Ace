@@ -3,11 +3,18 @@
 ## Learning Strategy: Top Down Approach
 
 - high-level ideas & concepts
-    - questio and answer
+    - question and answer
     - notes and outline
-- detail
+- details
     - materials and papers
     - insights
+
+## doc
+LightningModule Trainer Callback
+
+
+
+
 
 ## Steps
 - 用Pytorch的Dataset和DataLoader定义数据集。
@@ -20,6 +27,16 @@
 - [fast.ai](https://course.fast.ai/datasets)
 
 ## Visualization: Tensorboard
+
+
+## Examples
+
+### Basic
+
+- dataloader
+- 
+
+
 
 ## Reference
 - [pytorch-lightning入门到精通](https://github.com/3017218062/Pytorch-Lightning-Learning)

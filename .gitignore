@@ -1,0 +1,14 @@
+cifar*
+*.gz
+*.zip
+*data/
+*dataset/
+lightning_logs/
+*.csv
+.config/
+data_description.txt
+runs/Sep18_05-29-48_d9179e7d1c57/
+shortcuts.sh
+mnist_train/
+runs/
+bank-names.txt
